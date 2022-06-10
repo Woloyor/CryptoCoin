@@ -1,7 +1,7 @@
-# bitcoin_app
+# Crypto App
 
 A new Flutter project.
-
+(https://github.com/londonappbrewery/Images/blob/master/bitcoin-flutter-demo.gif)
 ## Getting Started
 
 This project is a starting point for a Flutter application.
