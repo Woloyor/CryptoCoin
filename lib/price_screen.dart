@@ -5,12 +5,16 @@ import 'dart:io' show Platform;
 import 'package:http/http.dart' as hhtp;
 import 'dart:convert';
 
+import 'currency.dart';
+
 class PriceScreen extends StatefulWidget {
   @override
   _PriceScreenState createState() => _PriceScreenState();
 }
 
 class _PriceScreenState extends State<PriceScreen> {
+  Map<String, String> coinValues = {};
+
   /// set the default currency
   String selectedCurrency = 'USD';
   bool isWaiting = false;
@@ -24,10 +28,11 @@ class _PriceScreenState extends State<PriceScreen> {
   getCurrenciesData() async {
     isWaiting = true;
     try {
-      double data = await CoinData().getRate();
+      dynamic data = await CoinData().getCurrencies(selectedCurrency);
       isWaiting = false;
       setState(() {
-        value = data.toStringAsFixed(0);
+        /// a map containing the values/rates
+        coinValues = data;
       });
     } catch (e) {
       print(e);
@@ -43,6 +48,31 @@ class _PriceScreenState extends State<PriceScreen> {
       );
       dropdownItems.add(newItem);
     }
+    return DropdownButton<String>(
+      value: selectedCurrency,
+      items: dropdownItems,
+      onChanged: (value) {
+        setState(() {
+          selectedCurrency = value;
+          getCurrenciesData();
+        });
+      },
+    );
+  }
+
+  List<DropdownMenuItem> dropDown() {
+    List<DropdownMenuItem<String>> dropDownItems = [];
+
+    for (String currency in currenciesList) {
+      //for every currency in the list we create a new dropdownmenu item
+      var newItem = DropdownMenuItem(
+        child: Text(currency),
+        value: currency,
+      );
+      // add to the list of menu item
+      dropDownItems.add(newItem);
+    }
+    return dropDownItems;
   }
 
   CupertinoPicker iOSPicker() {
@@ -76,33 +106,42 @@ class _PriceScreenState extends State<PriceScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Padding(
-            padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
-            child: Card(
-              color: Colors.lightBlueAccent,
-              elevation: 5.0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
-                child: Text(
-                  '1 BTC = $value USD',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
+          CardButton(
+            cryptoCurrency: 'BTC',
+            selectedCurrency: selectedCurrency,
+
+            /// this is a ternary opertor, it checks if is waiting is true, it displays a ? but if its false
+            /// meaning all operations are done  it prints the value of BTC(key) in the coinValues map.
+            value: isWaiting ? '?' : coinValues['BTC'],
+          ),
+          CardButton(
+            cryptoCurrency: 'ETH',
+            selectedCurrency: selectedCurrency,
+            value: isWaiting ? '?' : coinValues['ETH'],
+          ),
+          CardButton(
+            cryptoCurrency: 'LTC',
+            selectedCurrency: selectedCurrency,
+            value: isWaiting ? '?' : coinValues['LTC'],
           ),
           Container(
             height: 150.0,
             alignment: Alignment.center,
             padding: EdgeInsets.only(bottom: 30.0),
             color: Colors.lightBlue,
-            child: Platform.isIOS ? iOSPicker() : androidDropdown(),
+            child: DropdownButton<String>(
+              dropdownColor: Colors.lightBlueAccent,
+              value: selectedCurrency,
+              items: dropDown(),
+              onChanged: (value) {
+                setState(() {
+                  selectedCurrency = value;
+
+                  /// call this function each time the value in the drop down changes.
+                  getCurrenciesData();
+                });
+              },
+            ),
           ),
         ],
       ),
