@@ -28,11 +28,11 @@ class _PriceScreenState extends State<PriceScreen> {
   getCurrenciesData() async {
     isWaiting = true;
     try {
-      dynamic data = await CoinData().getCurrencies(selectedCurrency);
+      double data = await CoinData().getCurrencies(selectedCurrency);
       isWaiting = false;
       setState(() {
-        /// a map containing the values/rates
-        coinValues = data;
+        coinValues = data as Map<String, String>;
+        value = data.toStringAsFixed(0);
       });
     } catch (e) {
       print(e);
@@ -90,9 +90,27 @@ class _PriceScreenState extends State<PriceScreen> {
       onSelectedItemChanged: (selectedIndex) {
         setState(() {
           selectedCurrency = currenciesList[selectedIndex];
+          getCurrenciesData();
         });
       },
       children: pickerItems,
+    );
+  }
+
+  Column makeCards() {
+    List<CardButton> cryptoCards = [];
+    for (String crypto in cryptoList) {
+      cryptoCards.add(
+        CardButton(
+          cryptoCurrency: crypto,
+          selectedCurrency: selectedCurrency,
+          value: isWaiting ? '?' : coinValues[crypto],
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: cryptoCards,
     );
   }
 
@@ -106,42 +124,13 @@ class _PriceScreenState extends State<PriceScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          CardButton(
-            cryptoCurrency: 'BTC',
-            selectedCurrency: selectedCurrency,
-
-            /// this is a ternary opertor, it checks if is waiting is true, it displays a ? but if its false
-            /// meaning all operations are done  it prints the value of BTC(key) in the coinValues map.
-            value: isWaiting ? '?' : coinValues['BTC'],
-          ),
-          CardButton(
-            cryptoCurrency: 'ETH',
-            selectedCurrency: selectedCurrency,
-            value: isWaiting ? '?' : coinValues['ETH'],
-          ),
-          CardButton(
-            cryptoCurrency: 'LTC',
-            selectedCurrency: selectedCurrency,
-            value: isWaiting ? '?' : coinValues['LTC'],
-          ),
+          makeCards(),
           Container(
             height: 150.0,
             alignment: Alignment.center,
             padding: EdgeInsets.only(bottom: 30.0),
             color: Colors.lightBlue,
-            child: DropdownButton<String>(
-              dropdownColor: Colors.lightBlueAccent,
-              value: selectedCurrency,
-              items: dropDown(),
-              onChanged: (value) {
-                setState(() {
-                  selectedCurrency = value;
-
-                  /// call this function each time the value in the drop down changes.
-                  getCurrenciesData();
-                });
-              },
-            ),
+            child: Platform.isIOS ? iOSPicker() : androidDropdown(),
           ),
         ],
       ),
